@@ -13,16 +13,16 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 25
 
-    defaults:
-      run:
-        working-directory: ./dayzero
-
     env:
       CSC_IDENTITY_AUTO_DISCOVERY: "false"
       ELECTRON_CACHE: ${{ github.workspace }}/.cache/electron
       ELECTRON_BUILDER_CACHE: ${{ github.workspace }}/.cache/electron-builder
       npm_config_audit: "false"
       npm_config_fund: "false"
+
+    defaults:
+      run:
+        working-directory: ./day098
 
     steps:
       - name: Checkout repository
@@ -39,12 +39,21 @@ jobs:
           path: |
             .cache/electron
             .cache/electron-builder
-          key: electron-${{ runner.os }}-${{ hashFiles('dayzero/package-lock.json') }}
+          key: electron-${{ runner.os }}-${{ hashFiles('day098/package-lock.json') }}
+
+      - name: Verify project files
+        shell: pwsh
+        run: |
+          if (!(Test-Path package.json)) {
+            throw "package.json not found in the day098 project directory."
+          }
+          Write-Host "Project directory verified."
 
       - name: Install dependencies
         timeout-minutes: 10
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+        shell: pwsh
         run: |
           Remove-Item package-lock.json -ErrorAction SilentlyContinue
           npm install --no-audit --no-fund --fetch-retries=5 --fetch-timeout=60000
@@ -59,6 +68,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: DayZero-Windows-Setup
-          path: dayzero/release/*.exe
+          path: day098/release/*.exe
           if-no-files-found: error
 ```
