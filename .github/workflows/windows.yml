@@ -1,22 +1,29 @@
+```yaml
 name: Build Windows EXE
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
     timeout-minutes: 25
+
+    defaults:
+      run:
+        working-directory: ./dayzero
+
     env:
       CSC_IDENTITY_AUTO_DISCOVERY: "false"
       ELECTRON_CACHE: ${{ github.workspace }}/.cache/electron
       ELECTRON_BUILDER_CACHE: ${{ github.workspace }}/.cache/electron-builder
       npm_config_audit: "false"
       npm_config_fund: "false"
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -25,7 +32,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          
 
       - name: Cache Electron downloads
         uses: actions/cache@v4
@@ -33,17 +39,12 @@ jobs:
           path: |
             .cache/electron
             .cache/electron-builder
-          key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: electron-${{ runner.os }}-${{ hashFiles('dayzero/package-lock.json') }}
 
       - name: Install dependencies
         timeout-minutes: 10
-        # Skip the ~100 MB Electron binary download during install: it is the step that
-        # stalled forever, and electron-builder fetches its own copy when packaging.
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
-        # package-lock.json was generated on Linux, so it lacks the Windows-only native
-        # packages (@rollup/rollup-win32-x64-msvc, @esbuild/win32-x64). Dropping it lets
-        # npm resolve the right optional dependencies for this runner.
         run: |
           Remove-Item package-lock.json -ErrorAction SilentlyContinue
           npm install --no-audit --no-fund --fetch-retries=5 --fetch-timeout=60000
@@ -58,5 +59,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: DayZero-Windows-Setup
-          path: release/*.exe
+          path: dayzero/release/*.exe
           if-no-files-found: error
+```
